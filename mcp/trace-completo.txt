@@ -1,0 +1,298 @@
+========== HANDSHAKE (initialize) ==========
+
+--- CLIENT -> SERVER ---
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "method": "initialize",
+  "params": {
+    "protocolVersion": "2025-11-25",
+    "capabilities": {},
+    "clientInfo": {
+      "name": "mcp",
+      "version": "0.1.0"
+    },
+    "_meta": {}
+  }
+}
+
+--- SERVER -> CLIENT ---
+{
+  "jsonrpc": "2.0",
+  "id": 1,
+  "result": {
+    "capabilities": {
+      "experimental": {},
+      "prompts": {
+        "listChanged": false
+      },
+      "resources": {
+        "listChanged": false,
+        "subscribe": false
+      },
+      "tools": {
+        "listChanged": false
+      }
+    },
+    "protocolVersion": "2025-11-25",
+    "serverInfo": {
+      "name": "loja-demo",
+      "version": "1.0.0"
+    }
+  }
+}
+
+--- CLIENT -> SERVER ---
+{
+  "jsonrpc": "2.0",
+  "method": "notifications/initialized"
+}
+
+========== TOOLS/LIST ==========
+
+--- CLIENT -> SERVER ---
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "method": "tools/list",
+  "params": {
+    "_meta": {}
+  }
+}
+
+--- SERVER -> CLIENT ---
+{
+  "jsonrpc": "2.0",
+  "id": 2,
+  "result": {
+    "tools": [
+      {
+        "description": "Aplica um cupom de desconto a um pedido e devolve o novo valor a pagar.",
+        "inputSchema": {
+          "properties": {
+            "id_pedido": {
+              "title": "Id Pedido",
+              "type": "string"
+            },
+            "cupom": {
+              "title": "Cupom",
+              "type": "string"
+            }
+          },
+          "required": [
+            "id_pedido",
+            "cupom"
+          ],
+          "type": "object",
+          "title": "aplicar_descontoArguments"
+        },
+        "name": "aplicar_desconto",
+        "outputSchema": {
+          "properties": {
+            "result": {
+              "title": "Result",
+              "type": "string"
+            }
+          },
+          "required": [
+            "result"
+          ],
+          "type": "object",
+          "title": "aplicar_descontoOutput"
+        }
+      }
+    ]
+  }
+}
+
+========== TOOLS/CALL (sucesso, cupom 10OFF) ==========
+
+--- CLIENT -> SERVER ---
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "method": "tools/call",
+  "params": {
+    "name": "aplicar_desconto",
+    "arguments": {
+      "id_pedido": "1001",
+      "cupom": "10OFF"
+    },
+    "_meta": {}
+  }
+}
+
+--- SERVER -> CLIENT ---
+{
+  "jsonrpc": "2.0",
+  "id": 3,
+  "result": {
+    "content": [
+      {
+        "text": "Cupom 10OFF aplicado no pedido 1001 (teclado mecânico). Valor original R$ 349.90 -> novo valor R$ 314.91 (desconto de R$ 34.99).",
+        "type": "text"
+      }
+    ],
+    "isError": false,
+    "structuredContent": {
+      "result": "Cupom 10OFF aplicado no pedido 1001 (teclado mecânico). Valor original R$ 349.90 -> novo valor R$ 314.91 (desconto de R$ 34.99)."
+    }
+  }
+}
+
+========== TOOLS/CALL (erro, cupom inválido) ==========
+
+--- CLIENT -> SERVER ---
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "method": "tools/call",
+  "params": {
+    "name": "aplicar_desconto",
+    "arguments": {
+      "id_pedido": "1001",
+      "cupom": "NAOEXISTE"
+    },
+    "_meta": {}
+  }
+}
+Tool 'aplicar_desconto' failed: 'Error executing tool aplicar_desconto: Cupom NAOEXISTE inválido. Cupons disponíveis: FRETEGRATIS, 10OFF, BEMVINDO.'
+
+--- SERVER -> CLIENT ---
+{
+  "jsonrpc": "2.0",
+  "id": 4,
+  "result": {
+    "content": [
+      {
+        "text": "Error executing tool aplicar_desconto: Cupom NAOEXISTE inválido. Cupons disponíveis: FRETEGRATIS, 10OFF, BEMVINDO.",
+        "type": "text"
+      }
+    ],
+    "isError": true
+  }
+}
+
+========== RESOURCES/LIST ==========
+
+--- CLIENT -> SERVER ---
+{
+  "jsonrpc": "2.0",
+  "id": 5,
+  "method": "resources/list",
+  "params": {
+    "_meta": {}
+  }
+}
+
+--- SERVER -> CLIENT ---
+{
+  "jsonrpc": "2.0",
+  "id": 5,
+  "result": {
+    "resources": [
+      {
+        "description": "Documento de somente leitura com a tabela de cupons e regras de desconto da loja.",
+        "mimeType": "application/json",
+        "name": "regras_cupons",
+        "title": "Regras de descontos e cupons",
+        "uri": "loja://regras/cupons"
+      }
+    ]
+  }
+}
+
+========== RESOURCES/READ (loja://regras/cupons) ==========
+
+--- CLIENT -> SERVER ---
+{
+  "jsonrpc": "2.0",
+  "id": 6,
+  "method": "resources/read",
+  "params": {
+    "uri": "loja://regras/cupons",
+    "_meta": {}
+  }
+}
+
+--- SERVER -> CLIENT ---
+{
+  "jsonrpc": "2.0",
+  "id": 6,
+  "result": {
+    "contents": [
+      {
+        "mimeType": "application/json",
+        "text": "{\n  \"FRETEGRATIS\": {\n    \"tipo\": \"frete\",\n    \"regra\": \"frete grátis em pedidos acima de R$ 100\"\n  },\n  \"10OFF\": {\n    \"tipo\": \"percentual\",\n    \"desconto\": 0.1,\n    \"maximo\": 100.0\n  },\n  \"BEMVINDO\": {\n    \"tipo\": \"fixo\",\n    \"desconto\": 20.0,\n    \"minimo\": 50.0\n  }\n}",
+        "uri": "loja://regras/cupons"
+      }
+    ]
+  }
+}
+
+========== PROMPTS/LIST ==========
+
+--- CLIENT -> SERVER ---
+{
+  "jsonrpc": "2.0",
+  "id": 7,
+  "method": "prompts/list",
+  "params": {
+    "_meta": {}
+  }
+}
+
+--- SERVER -> CLIENT ---
+{
+  "jsonrpc": "2.0",
+  "id": 7,
+  "result": {
+    "prompts": [
+      {
+        "arguments": [
+          {
+            "name": "id_pedido",
+            "required": true
+          }
+        ],
+        "description": "Gera um template de mensagem resumindo um pedido para o cliente.",
+        "name": "resumir_pedido",
+        "title": "Resumir pedido para o cliente"
+      }
+    ]
+  }
+}
+
+========== PROMPTS/GET (resumir_pedido, id_pedido=1001) ==========
+
+--- CLIENT -> SERVER ---
+{
+  "jsonrpc": "2.0",
+  "id": 8,
+  "method": "prompts/get",
+  "params": {
+    "name": "resumir_pedido",
+    "arguments": {
+      "id_pedido": "1001"
+    },
+    "_meta": {}
+  }
+}
+
+--- SERVER -> CLIENT ---
+{
+  "jsonrpc": "2.0",
+  "id": 8,
+  "result": {
+    "description": "Gera um template de mensagem resumindo um pedido para o cliente.",
+    "messages": [
+      {
+        "content": {
+          "text": "Resuma o pedido 1001 de forma simpática para o cliente, em uma frase.",
+          "type": "text"
+        },
+        "role": "user"
+      }
+    ]
+  }
+}
